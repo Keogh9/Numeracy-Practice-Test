@@ -11,8 +11,7 @@
     }
     body {
       font-family: system-ui, sans-serif;
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
       background: #f5f3ee;
       color: #333;
     }
@@ -96,6 +95,7 @@
       cursor: pointer;
       color: #666;
     }
+    /* RESULTS STYLING */
     #results-container h2 {
       text-align: center;
       color: var(--navy);
@@ -110,6 +110,18 @@
     }
     .correct { color: green; }
     .wrong { color: red; }
+
+    /* NEW: Retake button */
+    #retake-btn {
+      display: block;
+      margin: 1rem auto 0;
+      background: var(--orange);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -128,6 +140,8 @@
   <div id="results-container" style="display:none;">
     <h2>Results</h2>
     <ul id="results-list"></ul>
+    <!-- NEW: Retake Test button -->
+    <button id="retake-btn">Retake Test</button>
   </div>
 
   <script>
@@ -155,10 +169,10 @@
     const testContainer = document.getElementById("test-container");
     const resultsContainer = document.getElementById("results-container");
     const resultsList = document.getElementById("results-list");
+    const retakeBtn = document.getElementById("retake-btn");
 
     function renderQuestion() {
       const q = questions[current];
-      // build blanks
       const parts = q.expr.split(/(__)/g);
       eqDiv.innerHTML = "";
       let blankIndex = 0;
@@ -172,22 +186,19 @@
           eqDiv.appendChild(span);
           blankIndex++;
         } else {
-          eqDiv.insertAdjacentHTML("beforeend", part.replace(/×/g,"×").replace(/−/g,"−"));
+          eqDiv.insertAdjacentHTML("beforeend", part);
         }
       });
-
-      // build keypad
+      // keypad
       pad.innerHTML = "";
       for (let d = 1; d <= 9; d++) {
         const btn = document.createElement("div");
         btn.className = "digit";
         btn.textContent = d;
         btn.onclick = () => pickDigit(d);
-        // disable if already chosen in this question
         if (userAnswers[current]?.includes(d)) btn.classList.add("used");
         pad.appendChild(btn);
       }
-
       prevBtn.disabled = (current === 0);
       nextBtn.textContent = (current === questions.length - 1 ? "Submit" : "Next");
     }
@@ -195,7 +206,6 @@
     function pickDigit(d) {
       userAnswers[current] = userAnswers[current] || [];
       const blanks = eqDiv.querySelectorAll(".blank");
-      // find first empty
       for (let i = 0; i < blanks.length; i++) {
         if (!userAnswers[current][i]) {
           userAnswers[current][i] = d;
@@ -212,25 +222,20 @@
     }
 
     clearBtn.onclick = () => {
-      // clear LAST filled
       if (!userAnswers[current]) return;
       const arr = userAnswers[current];
-      const lastFilled = arr.map((v,i)=>v? i : -1).filter(i=>i>=0).pop();
-      if (lastFilled != null) {
-        arr[lastFilled] = null;
-        renderQuestion();
-      }
+      const last = arr.map((v,i)=>v?i:-1).filter(i=>i>=0).pop();
+      if (last != null) arr[last] = null;
+      renderQuestion();
     };
 
     prevBtn.onclick = () => {
       if (current > 0) {
-        current--;
-        renderQuestion();
+        current--; renderQuestion();
       }
     };
 
     nextBtn.onclick = () => {
-      // ensure all filled
       const blanks = eqDiv.querySelectorAll(".blank");
       const ua = userAnswers[current] || [];
       if (ua.length < blanks.length || ua.some(v=>!v)) {
@@ -238,8 +243,7 @@
         return;
       }
       if (current < questions.length - 1) {
-        current++;
-        renderQuestion();
+        current++; renderQuestion();
       } else {
         showResults();
       }
@@ -255,7 +259,7 @@
         const correct = q.answer.join(", ");
         const isRight = JSON.stringify(userAnswers[idx]) === JSON.stringify(q.answer);
         li.innerHTML = `
-          <strong>Q${idx+1}:</strong> ${q.expr.replace(/__/g, (m,i)=>(i<q.answer.length?"__":""))}<br>
+          <strong>Q${idx+1}:</strong> ${q.expr.replace(/__/g, m=> "__")}<br>
           Your answer: <span class="${isRight? 'correct':'wrong'}">${given}</span><br>
           ${isRight ? "" : `Correct: ${correct}<br>Rationale: ${q.rationale}`}
         `;
@@ -263,8 +267,18 @@
       });
     }
 
-    // init
+    // NEW: Retake button handler
+    retakeBtn.onclick = () => {
+      current = 0;
+      for (let i = 0; i < userAnswers.length; i++) userAnswers[i] = null;
+      resultsContainer.style.display = "none";
+      testContainer.style.display = "block";
+      renderQuestion();
+    };
+
+    // initialize first question
     renderQuestion();
   </script>
 </body>
 </html>
+
