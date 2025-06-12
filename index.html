@@ -131,7 +131,7 @@
   </div>
 
   <script>
-    // Your 10 sample questions
+    // 10 sample questions
     const questions = [
       { expr: "__ + __ = 7" },
       { expr: "__ × __ = 15" },
@@ -229,7 +229,7 @@
       }
     };
 
-    // Build the arithmetic string from expr and user inputs
+    // Build full expression string
     function buildExpression(expr, ua) {
       let i = 0;
       return expr
@@ -239,8 +239,7 @@
         .split('=')[0]
         .trim();
     }
-
-    // Evaluate with BOMDAS: convert symbols, then eval
+    // Evaluate using BOMDAS
     function evaluateExpression(str) {
       const jsExpr = str.replace(/×/g, '*').replace(/−/g, '-');
       try {
@@ -261,20 +260,18 @@
         const userExpr = buildExpression(q.expr, ua);
         const expected = parseInt(q.expr.split('=')[1].trim(), 10);
         const actual   = evaluateExpression(userExpr);
+        const correct  = actual === expected;
 
-        const correct = actual === expected;
         const li = document.createElement("li");
         li.innerHTML = `<strong>Q${i+1}:</strong>
           <span class="${correct?'correct':'wrong'}">
-            ${correct
-              ? `${userExpr} = ${expected}`
-              : `${userExpr} = ${actual} (should be ${expected})`}
+            ${userExpr} = ${expected}
           </span>`;
         resL.appendChild(li);
       });
     }
 
-    // Initialize
+    // Init
     renderQuestion();
   </script>
 </body>
