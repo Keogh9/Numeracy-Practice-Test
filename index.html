@@ -1,17 +1,17 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Numeracy Practice – Sample Digit Challenge</title>
+  <meta charset="UTF-8" />
+  <title>Numeracy Practice – Digit Challenge</title>
   <style>
     :root {
       --navy: #003366;
       --orange: #FF6600;
     }
+    * { box-sizing: border-box; }
     body {
-      font-family: system-ui, sans-serif;
       margin: 0; padding: 0;
+      font-family: system-ui, sans-serif;
       background: #f5f3ee;
       color: #333;
     }
@@ -95,33 +95,21 @@
       cursor: pointer;
       color: #666;
     }
-    /* RESULTS STYLING */
     #results-container h2 {
       text-align: center;
       color: var(--navy);
     }
-    #results-container ul {
+    #results-list {
       list-style: none;
       padding: 0;
     }
-    #results-container li {
+    #results-list li {
       padding: .5rem 0;
       border-bottom: 1px solid #eee;
+      font-size: 1rem;
     }
     .correct { color: green; }
-    .wrong { color: red; }
-
-    /* NEW: Retake button */
-    #retake-btn {
-      display: block;
-      margin: 1rem auto 0;
-      background: var(--orange);
-      color: white;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-      cursor: pointer;
-    }
+    .wrong   { color: red; }
   </style>
 </head>
 <body>
@@ -129,7 +117,7 @@
 
   <div id="test-container">
     <div id="equation"></div>
-    <button id="clear-btn" title="Clear current blank">🗑️</button>
+    <button id="clear-btn" title="Clear">🗑️</button>
     <div id="digit-pad"></div>
     <div id="controls">
       <button id="prev-btn">Previous</button>
@@ -140,107 +128,99 @@
   <div id="results-container" style="display:none;">
     <h2>Results</h2>
     <ul id="results-list"></ul>
-    <!-- NEW: Retake Test button -->
-    <button id="retake-btn">Retake Test</button>
   </div>
 
   <script>
+    // Your 10 sample questions
     const questions = [
-      { expr: "__ + __ = 7",  answer: [3,4],    rationale: "3 + 4 = 7" },
-      { expr: "__ × __ = 15", answer: [3,5],    rationale: "3 × 5 = 15" },
-      { expr: "__ × __ = 36", answer: [4,9],    rationale: "4 × 9 = 36" },
-      { expr: "__ + __ + __ = 17", answer: [9,1,7], rationale: "9 + 1 + 7 = 17" },
-      { expr: "__ + __ + __ + __ = 25", answer: [9,8,3,5], rationale: "9 + 8 + 3 + 5 = 25" },
-      { expr: "__ + __ − __ + __ = 13", answer: [9,8,7,3],   rationale: "9 + 8 − 7 + 3 = 13" },
-      { expr: "(__ × __) + __ = 23",    answer: [5,4,3], rationale: "(5 × 4) + 3 = 23" },
-      { expr: "(__ × __) + __ + __ = 48", answer: [4,9,5,7], rationale: "(4 × 9) + 5 + 7 = 48" },
-      { expr: "__ − __ + __ = 12",      answer: [9,2,5],   rationale: "9 − 2 + 5 = 12" },
-      { expr: "(__ + __) × __ − __ = 14", answer: [2,3,4,6], rationale: "(2 + 3) × 4 − 6 = 14" }
+      { expr: "__ + __ = 7" },
+      { expr: "__ × __ = 15" },
+      { expr: "__ × __ = 36" },
+      { expr: "__ + __ + __ = 17" },
+      { expr: "__ + __ + __ + __ = 25" },
+      { expr: "__ + __ - __ + __ = 13" },
+      { expr: "(__ × __) + __ = 23" },
+      { expr: "(__ × __) + __ + __ = 48" },
+      { expr: "__ - __ + __ = 12" },
+      { expr: "(__ + __) × __ - __ = 14" }
     ];
 
     let current = 0;
     const userAnswers = Array(questions.length).fill(null);
 
     const eqDiv = document.getElementById("equation");
-    const pad = document.getElementById("digit-pad");
-    const prevBtn = document.getElementById("prev-btn");
-    const nextBtn = document.getElementById("next-btn");
-    const clearBtn = document.getElementById("clear-btn");
-    const testContainer = document.getElementById("test-container");
-    const resultsContainer = document.getElementById("results-container");
-    const resultsList = document.getElementById("results-list");
-    const retakeBtn = document.getElementById("retake-btn");
+    const pad   = document.getElementById("digit-pad");
+    const prevB = document.getElementById("prev-btn");
+    const nextB = document.getElementById("next-btn");
+    const clearB= document.getElementById("clear-btn");
+    const resC  = document.getElementById("results-container");
+    const testC = document.getElementById("test-container");
+    const resL  = document.getElementById("results-list");
 
     function renderQuestion() {
       const q = questions[current];
-      const parts = q.expr.split(/(__)/g);
       eqDiv.innerHTML = "";
-      let blankIndex = 0;
-      parts.forEach(part => {
+      let bi = 0;
+      q.expr.split(/(__)/g).forEach(part => {
         if (part === "__") {
           const span = document.createElement("span");
-          span.classList.add("blank");
-          span.dataset.idx = blankIndex;
-          span.textContent = userAnswers[current]?.[blankIndex] ?? "";
-          span.onclick = () => clearBlank(blankIndex);
+          span.className = "blank";
+          span.dataset.idx = bi;
+          span.textContent = userAnswers[current]?.[bi] ?? "";
+          span.onclick = () => {
+            userAnswers[current][bi] = null;
+            renderQuestion();
+          };
           eqDiv.appendChild(span);
-          blankIndex++;
+          bi++;
         } else {
-          eqDiv.insertAdjacentHTML("beforeend", part);
+          eqDiv.insertAdjacentText("beforeend", part);
         }
       });
-      // keypad
+
       pad.innerHTML = "";
       for (let d = 1; d <= 9; d++) {
         const btn = document.createElement("div");
         btn.className = "digit";
         btn.textContent = d;
-        btn.onclick = () => pickDigit(d);
         if (userAnswers[current]?.includes(d)) btn.classList.add("used");
+        btn.onclick = () => {
+          userAnswers[current] = userAnswers[current] || [];
+          const blanks = eqDiv.querySelectorAll(".blank");
+          for (let i = 0; i < blanks.length; i++) {
+            if (!userAnswers[current][i]) {
+              userAnswers[current][i] = d;
+              break;
+            }
+          }
+          renderQuestion();
+        };
         pad.appendChild(btn);
       }
-      prevBtn.disabled = (current === 0);
-      nextBtn.textContent = (current === questions.length - 1 ? "Submit" : "Next");
+
+      prevB.disabled = current === 0;
+      nextB.textContent = current === questions.length - 1 ? "Submit" : "Next";
     }
 
-    function pickDigit(d) {
-      userAnswers[current] = userAnswers[current] || [];
-      const blanks = eqDiv.querySelectorAll(".blank");
-      for (let i = 0; i < blanks.length; i++) {
-        if (!userAnswers[current][i]) {
-          userAnswers[current][i] = d;
-          break;
-        }
-      }
-      renderQuestion();
-    }
-
-    function clearBlank(i) {
-      if (!userAnswers[current]) return;
-      userAnswers[current][i] = null;
-      renderQuestion();
-    }
-
-    clearBtn.onclick = () => {
-      if (!userAnswers[current]) return;
-      const arr = userAnswers[current];
+    clearB.onclick = () => {
+      const arr = userAnswers[current] || [];
       const last = arr.map((v,i)=>v?i:-1).filter(i=>i>=0).pop();
-      if (last != null) arr[last] = null;
-      renderQuestion();
+      if (last != null) {
+        arr[last] = null;
+        renderQuestion();
+      }
     };
 
-    prevBtn.onclick = () => {
+    prevB.onclick = () => {
       if (current > 0) {
         current--; renderQuestion();
       }
     };
-
-    nextBtn.onclick = () => {
-      const blanks = eqDiv.querySelectorAll(".blank");
+    nextB.onclick = () => {
       const ua = userAnswers[current] || [];
+      const blanks = eqDiv.querySelectorAll(".blank");
       if (ua.length < blanks.length || ua.some(v=>!v)) {
-        alert("Please fill all blanks before proceeding.");
-        return;
+        return alert("Please fill all blanks before proceeding.");
       }
       if (current < questions.length - 1) {
         current++; renderQuestion();
@@ -249,34 +229,52 @@
       }
     };
 
+    // Build the arithmetic string from expr and user inputs
+    function buildExpression(expr, ua) {
+      let i = 0;
+      return expr
+        .split(/(__)/g)
+        .map(part => part === "__" ? ua[i++] : part)
+        .join('')
+        .split('=')[0]
+        .trim();
+    }
+
+    // Evaluate with BOMDAS: convert symbols, then eval
+    function evaluateExpression(str) {
+      const jsExpr = str.replace(/×/g, '*').replace(/−/g, '-');
+      try {
+        // eslint-disable-next-line no-eval
+        return eval(jsExpr);
+      } catch {
+        return NaN;
+      }
+    }
+
     function showResults() {
-      testContainer.style.display = "none";
-      resultsContainer.style.display = "block";
-      resultsList.innerHTML = "";
-      questions.forEach((q, idx) => {
+      testC.style.display = "none";
+      resC.style.display  = "block";
+      resL.innerHTML = "";
+
+      questions.forEach((q, i) => {
+        const ua = userAnswers[i] || [];
+        const userExpr = buildExpression(q.expr, ua);
+        const expected = parseInt(q.expr.split('=')[1].trim(), 10);
+        const actual   = evaluateExpression(userExpr);
+
+        const correct = actual === expected;
         const li = document.createElement("li");
-        const given = (userAnswers[idx] || []).join(", ");
-        const correct = q.answer.join(", ");
-        const isRight = JSON.stringify(userAnswers[idx]) === JSON.stringify(q.answer);
-        li.innerHTML = `
-          <strong>Q${idx+1}:</strong> ${q.expr.replace(/__/g, m=> "__")}<br>
-          Your answer: <span class="${isRight? 'correct':'wrong'}">${given}</span><br>
-          ${isRight ? "" : `Correct: ${correct}<br>Rationale: ${q.rationale}`}
-        `;
-        resultsList.appendChild(li);
+        li.innerHTML = `<strong>Q${i+1}:</strong>
+          <span class="${correct?'correct':'wrong'}">
+            ${correct
+              ? `${userExpr} = ${expected}`
+              : `${userExpr} = ${actual} (should be ${expected})`}
+          </span>`;
+        resL.appendChild(li);
       });
     }
 
-    // NEW: Retake button handler
-    retakeBtn.onclick = () => {
-      current = 0;
-      for (let i = 0; i < userAnswers.length; i++) userAnswers[i] = null;
-      resultsContainer.style.display = "none";
-      testContainer.style.display = "block";
-      renderQuestion();
-    };
-
-    // initialize first question
+    // Initialize
     renderQuestion();
   </script>
 </body>
